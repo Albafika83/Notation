@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Classe Participatif</title>
+    <style>
+        .classroom {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+        .row {
+            display: flex;
+            gap: 100px;
+        }
+        .table {
+            display: flex;
+            gap: 10px;
+            border: 1px solid #000;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .seat {
+            width: 120px; /* Plus large pour accommoder le menu déroulant */
+            height: 50px;
+            border: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff;
+        }
+        select {
+            width: 100%;
+            height: 100%;
+        }
+        .classe-select {
+            margin-bottom: 20px;
+            font-size: 16px;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu déroulant pour choisir la classe -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <label for="choix-classe">Choisir la classe :</label>
+        <select id="choix-classe" class="classe-select">
+            <option value="">-- Sélectionner une classe --</option>
+            <option value="classe-A">Classe A</option>
+            <option value="classe-B">Classe B</option>
+        </select>
+    </div>
+
+    <!-- Plan de classe -->
+    <div class="classroom">
+        <!-- Rangée 1 -->
+        <div class="row">
+            <div class="table">
+                <div class="seat"><select class="eleve-select" data-seat="1"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="2"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="3"></select></div>
+            </div>
+            <div class="table">
+                <div class="seat"><select class="eleve-select" data-seat="4"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="5"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="6"></select></div>
+            </div>
+        </div>
+
+        <!-- Rangée 2 -->
+        <div class="row">
+            <div class="table">
+                <div class="seat"><select class="eleve-select" data-seat="7"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="8"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="9"></select></div>
+            </div>
+            <div class="table">
+                <div class="seat"><select class="eleve-select" data-seat="10"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="11"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="12"></select></div>
+            </div>
+        </div>
+
+        <!-- Rangée 3 -->
+        <div class="row">
+            <div class="table">
+                <div class="seat"><select class="eleve-select" data-seat="13"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="14"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="15"></select></div>
+            </div>
+            <div class="table">
+                <div class="seat"><select class="eleve-select" data-seat="16"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="17"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="18"></select></div>
+            </div>
+        </div>
+
+        <!-- Rangée 4 -->
+        <div class="row">
+            <div class="table">
+                <div class="seat"><select class="eleve-select" data-seat="19"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="20"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="21"></select></div>
+            </div>
+            <div class="table">
+                <div class="seat"><select class="eleve-select" data-seat="22"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="23"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="24"></select></div>
+            </div>
+        </div>
+
+        <!-- Rangée 5 -->
+        <div class="row">
+            <div class="table">
+                <div class="seat"><select class="eleve-select" data-seat="25"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="26"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="27"></select></div>
+            </div>
+            <div class="table">
+                <div class="seat"><select class="eleve-select" data-seat="28"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="29"></select></div>
+                <div class="seat"><select class="eleve-select" data-seat="30"></select></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Connexion au serveur WebSocket
+        const ws = new WebSocket('ws://localhost:8080');
+
+        // Données locales pour stocker les assignations des sièges
+        let assignations = {};
+
+        // Fonction pour charger la liste des élèves depuis eleves.html
+        async function chargerEleves(classe) {
+            const response = await fetch('eleves.html');
+            const text = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+            const eleves = Array.from(doc.querySelectorAll(`#${classe} li`)).map(li => li.textContent);
+            return eleves;
+        }
+
+        // Fonction pour peupler les menus déroulants avec les élèves
+        async function peuplerMenus(classe) {
+            const eleves = await chargerEleves(classe);
+            const menus = document.querySelectorAll('.eleve-select');
+
+            menus.forEach(menu => {
+                // Vider le menu déroulant
+                menu.innerHTML = '';
+
+                // Ajouter une option par défaut
+                const optionDefaut = document.createElement('option');
+                optionDefaut.value = '';
+                optionDefaut.textContent = 'Choisir un élève';
+                menu.appendChild(optionDefaut);
+
+                // Ajouter les élèves dans le menu déroulant
+                eleves.forEach(eleve => {
+                    const option = document.createElement('option');
+                    option.value = eleve;
+                    option.textContent = eleve;
+                    menu.appendChild(option);
+                });
+
+                // Restaurer la sélection si elle existe dans les assignations
+                const seatId = menu.getAttribute('data-seat');
+                if (assignations[seatId]) {
+                    menu.value = assignations[seatId];
+                }
+            });
+        }
+
+        // Écouter le changement de sélection de la classe
+        document.getElementById('choix-classe').addEventListener('change', (event) => {
+            const classeSelectionnee = event.target.value;
+            if (classeSelectionnee) {
+                peuplerMenus(classeSelectionnee);
+            } else {
+                // Vider les menus si aucune classe n'est sélectionnée
+                const menus = document.querySelectorAll('.eleve-select');
+                menus.forEach(menu => {
+                    menu.innerHTML = '<option value="">Choisir un élève</option>';
+                });
+            }
+        });
+
+        // Écouter le changement de sélection dans les menus déroulants
+        document.addEventListener('change', (event) => {
+            if (event.target.classList.contains('eleve-select')) {
+                const seatId = event.target.getAttribute('data-seat');
+                const eleve = event.target.value;
+
+                // Mettre à jour les assignations locales
+                assignations[seatId] = eleve;
+
+                // Envoyer les nouvelles assignations au serveur
+                ws.send(JSON.stringify({ [seatId]: eleve }));
+            }
+        });
+
+        // Écouter les messages du serveur WebSocket
+        ws.addEventListener('message', (event) => {
+            const message = JSON.parse(event.data);
+
+            if (message.type === 'INIT') {
+                // Initialiser les assignations avec les données reçues
+                assignations = message.data;
+
+                // Mettre à jour les menus déroulants
+                Object.entries(assignations).forEach(([seatId, eleve]) => {
+                    const menu = document.querySelector(`.eleve-select[data-seat="${seatId}"]`);
+                    if (menu) {
+                        menu.value = eleve;
+                    }
+                });
+            } else if (message.type === 'UPDATE') {
+                // Mettre à jour les assignations locales
+                Object.assign(assignations, message.data);
+
+                // Mettre à jour les menus déroulants
+                Object.entries(message.data).forEach(([seatId, eleve]) => {
+                    const menu = document.querySelector(`.eleve-select[data-seat="${seatId}"]`);
+                    if (menu) {
+                        menu.value = eleve;
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
