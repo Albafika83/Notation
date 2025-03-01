@@ -10,6 +10,7 @@
             margin: 0;
             padding: 20px;
             background-color: #f5f5f5;
+            overflow-x: hidden; /* Assurer qu'il n'y a pas de défilement horizontal au niveau du body */
         }
         
         .status-indicator {
@@ -62,6 +63,7 @@
             justify-content: center;
             margin-bottom: 20px;
             gap: 10px;
+            flex-wrap: wrap; /* Permettre aux éléments de passer à la ligne sur petit écran */
         }
         
         .selection-box {
@@ -71,7 +73,34 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
+        .reset-button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .reset-button:hover {
+            background-color: #d32f2f;
+        }
+        
+        .reset-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .classroom-container {
+            width: 100%;
+            overflow-x: auto; /* Activer le défilement horizontal si nécessaire */
+            -webkit-overflow-scrolling: touch; /* Défilement fluide sur iOS */
+        }
+        
         .classroom {
+            min-width: 800px; /* Largeur minimale pour assurer que tout le contenu soit visible */
             max-width: 1000px;
             margin: 0 auto;
             background-color: white;
@@ -159,6 +188,18 @@
             background-color: #e3f2fd;
             border: 2px dashed #2196F3;
         }
+        
+        /* Styles responsives pour mobile */
+        @media (max-width: 768px) {
+            .navigation-bar a {
+                display: inline-block;
+                margin: 5px 10px;
+            }
+            
+            .seat {
+                width: 100px; /* Réduire légèrement la taille sur mobile */
+            }
+        }
     </style>
 </head>
 <body>
@@ -167,7 +208,9 @@
     <h1>Plan de Classe Participatif</h1>
     
     <div class="navigation-bar">
-        <a href="index.html">Plan de Classe</a>
+        <a href="index1.html">Plan de Classe</a>
+        <a href="evaluation.html">Évaluation</a>
+        <a href="admin.html">Administration</a>
         <a href="notes.html">Notes</a>
     </div>
     
@@ -187,11 +230,17 @@
                 <option value="groupe-2">Groupe 2</option>
             </select>
         </div>
+        
+        <div class="selection-box">
+            <button id="reset-button" class="reset-button" disabled>Réinitialiser les assignations</button>
+        </div>
     </div>
     
-    <div class="classroom">
-        <div class="teacher-desk">Bureau du professeur</div>
-        <!-- Les rangées seront générées dynamiquement ici -->
+    <div class="classroom-container">
+        <div class="classroom">
+            <div class="teacher-desk">Bureau du professeur</div>
+            <!-- Les rangées seront générées dynamiquement ici -->
+        </div>
     </div>
     
     <script>
@@ -210,6 +259,7 @@
         const statusElement = document.getElementById('status');
         const choixClasseElement = document.getElementById('choix-classe');
         const choixGroupeElement = document.getElementById('choix-groupe');
+        const resetButtonElement = document.getElementById('reset-button');
         const classroomElement = document.querySelector('.classroom');
         
         // Initialisation
@@ -220,6 +270,7 @@
             // Ajouter les écouteurs d'événements
             choixClasseElement.addEventListener('change', onClasseChange);
             choixGroupeElement.addEventListener('change', onGroupeChange);
+            resetButtonElement.addEventListener('click', resetAssignations);
             
             // Générer le plan de classe
             genererPlanClasse();
@@ -282,6 +333,7 @@
                             // Initialiser les assignations pour la classe et le groupe actuels
                             if (message.classe === classeActuelle && message.groupe === groupeActuel) {
                                 assignations = message.assignations || {};
+                                evaluations = message.evaluations || {};
                                 mettreAJourAssignations();
                             }
                             break;
@@ -290,6 +342,9 @@
                             // Mettre à jour les assignations si la mise à jour concerne la classe et le groupe actuels
                             if (message.classe === classeActuelle && message.groupe === groupeActuel) {
                                 Object.assign(assignations, message.assignations);
+                                if (message.evaluations) {
+                                    Object.assign(evaluations, message.evaluations);
+                                }
                                 mettreAJourAssignations();
                             }
                             break;
@@ -386,10 +441,16 @@
             if (groupeActuel) {
                 localStorage.setItem('dernierGroupe', groupeActuel);
                 
+                // Activer le bouton de réinitialisation
+                resetButtonElement.disabled = false;
+                
                 // Demander les assignations pour la classe et le groupe actuels
                 demanderAssignations();
             } else {
                 localStorage.removeItem('dernierGroupe');
+                
+                // Désactiver le bouton de réinitialisation
+                resetButtonElement.disabled = true;
                 
                 // Réinitialiser les assignations
                 assignations = {};
@@ -479,6 +540,9 @@
         function mettreAJourAssignations() {
             // Mettre à jour la liste des élèves disponibles
             mettreAJourElevesDisponibles();
+            
+            // Activer ou désactiver le bouton de réinitialisation
+            resetButtonElement.disabled = !(classeActuelle && groupeActuel);
             
             // Mettre à jour chaque siège
             document.querySelectorAll('.student-select').forEach(select => {
@@ -725,11 +789,30 @@
                 }
             }
         }
+        
+        // Fonction pour réinitialiser toutes les assignations
+        function resetAssignations() {
+            if (!classeActuelle || !groupeActuel) return;
+            
+            // Confirmer la réinitialisation
+            if (confirm('Êtes-vous sûr de vouloir retirer toutes les assignations et réinitialiser les notes ? Cette action ne peut pas être annulée.')) {
+                // Réinitialiser les assignations locales
+                assignations = {};
+                
+                // Mettre à jour l'affichage
+                mettreAJourAssignations();
+                
+                // Envoyer la mise à jour au serveur
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'RESET_ASSIGNMENTS',
+                        classe: classeActuelle,
+                        groupe: groupeActuel,
+                        resetEvaluations: true // Indiquer qu'il faut aussi réinitialiser les évaluations
+                    }));
+                }
+            }
+        }
     </script>
 </body>
-</html>
-
-
-
-
-
+</html> 

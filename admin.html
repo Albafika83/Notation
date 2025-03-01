@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Plan de Classe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .status-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .online {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .offline {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+        }
+        
+        .panel {
+            flex: 1;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .class-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .class-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .class-item:last-child {
+            border-bottom: none;
+        }
+        
+        .class-name {
+            font-weight: bold;
+        }
+        
+        .student-count {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .button:hover {
+            background-color: #45a049;
+        }
+        
+        .button.delete {
+            background-color: #f44336;
+        }
+        
+        .button.delete:hover {
+            background-color: #da190b;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .preview {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .preview pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .navigation-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .navigation-bar a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        /* Styles pour la liste des élèves */
+        .student-list {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 15px;
+        }
+        
+        .student-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .student-name {
+            font-size: 14px;
+        }
+        
+        .delete-small {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .delete-small:hover {
+            background-color: #d32f2f;
+        }
+        
+        /* Animation pour l'ajout/suppression d'élèves */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .student-item {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Responsive pour la gestion des élèves */
+        @media (max-width: 768px) {
+            .student-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .student-item button {
+                margin-top: 5px;
+                align-self: flex-end;
+            }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="status" class="status-indicator offline">Déconnecté</div>
+    
+    <h1>Administration du Plan de Classe</h1>
+    
+    <div class="navigation-bar">
+        <a href="index1.html">Plan de Classe</a>
+        <a href="evaluation.html">Évaluation</a>
+        <a href="admin.html">Administration</a>
+        <a href="notes.html">Notes</a>
+    </div>
+    
+    <div class="container">
+        <div class="panel">
+            <h2>Classes</h2>
+            <div class="form-group">
+                <label for="nouvelle-classe">Nouvelle classe</label>
+                <input type="text" id="nouvelle-classe" placeholder="Nom de la classe">
+                <button class="button" onclick="ajouterClasse()">Ajouter</button>
+            </div>
+            <ul id="liste-classes" class="class-list">
+                <!-- Les classes seront ajoutées ici dynamiquement -->
+            </ul>
+        </div>
+        
+        <div class="panel">
+            <h2>Importer des élèves</h2>
+            <div class="form-group">
+                <label for="classe-import">Classe</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="classe-import" style="flex-grow: 1;">
+                        <option value="">Sélectionnez une classe</option>
+                    </select>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="auto-create-classes" checked>
+                        <label for="auto-create-classes" style="margin-left: 5px; margin-bottom: 0;">Créer les classes automatiquement</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Source des données</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button class="button" id="btn-fichier" onclick="toggleSource('fichier')">Fichier CSV</button>
+                    <button class="button" id="btn-texte" onclick="toggleSource('texte')">Texte CSV</button>
+                </div>
+            </div>
+            
+            <div id="source-fichier" style="display: none;">
+                <div class="form-group">
+                    <label for="csv-file">Fichier CSV</label>
+                    <input type="file" id="csv-file" accept=".csv, text/csv, text/plain">
+                </div>
+            </div>
+            
+            <div id="source-texte">
+                <div class="form-group">
+                    <label for="csv-input">Données CSV ou liste d'élèves</label>
+                    <textarea id="csv-input" rows="10" placeholder="Copiez-collez vos données (format flexible: NOM Prénom Classe, ou tout autre format)"></textarea>
+                </div>
+            </div>
+            
+            <div class="form-group" style="display: flex; gap: 10px;">
+                <button class="button" onclick="previsualiserImport()">Prévisualiser</button>
+                <button class="button" onclick="importerEleves()">Importer</button>
+                <button class="button delete" onclick="viderListe()" style="margin-left: auto;">Vider la liste</button>
+            </div>
+            
+            <div id="preview" class="preview">
+                <h3>Prévisualisation</h3>
+                <div id="preview-content"></div>
+            </div>
+        </div>
+        
+        <!-- Nouvelle section de gestion manuelle des élèves -->
+        <div class="admin-section">
+            <h2>Gestion manuelle des élèves</h2>
+            
+            <div class="form-group">
+                <label for="classe-gestion">Classe :</label>
+                <select id="classe-gestion" class="form-control">
+                    <option value="">Sélectionnez une classe</option>
+                </select>
+            </div>
+            
+            <div id="gestion-eleves-content" style="display: none;">
+                <!-- Formulaire d'ajout d'élève -->
+                <div class="form-group">
+                    <h3>Ajouter un élève</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="nouvel-eleve" class="form-control" placeholder="Nom de l'élève" style="flex: 1;">
+                        <button id="btn-ajouter-eleve" class="button">Ajouter</button>
+                    </div>
+                </div>
+                
+                <!-- Liste des élèves avec boutons de suppression -->
+                <div class="form-group">
+                    <h3>Liste des élèves</h3>
+                    <ul id="liste-eleves" class="student-list">
+                        <!-- Les élèves seront ajoutés ici dynamiquement -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Variables globales
+        let ws = null;
+        let reconnectionTimer = null;
+        let adminData = null;
+        let sourceActive = 'texte';
+        let donneesImport = null;
+        
+        // Variables pour la gestion manuelle des élèves
+        let classeGestionElement;
+        let nouvelEleveElement;
+        let listeElevesElement;
+        let btnAjouterEleveElement;
+        let gestionElevesContentElement;
+        
+        // Éléments DOM
+        const statusElement = document.getElementById('status');
+        const listeClassesElement = document.getElementById('liste-classes');
+        const nouvelleClasseElement = document.getElementById('nouvelle-classe');
+        const classeImportElement = document.getElementById('classe-import');
+        const csvInputElement = document.getElementById('csv-input');
+        const csvFileElement = document.getElementById('csv-file');
+        const previewElement = document.getElementById('preview-content');
+        const autoCreateClassesElement = document.getElementById('auto-create-classes');
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            // Connecter au WebSocket
+            connectWebSocket();
+            
+            // Initialiser l'interface
+            toggleSource('texte');
+            
+            // Ajouter un écouteur d'événement pour le fichier CSV
+            csvFileElement.addEventListener('change', handleFileSelect);
+            
+            // Initialiser les éléments pour la gestion manuelle des élèves
+            classeGestionElement = document.getElementById('classe-gestion');
+            nouvelEleveElement = document.getElementById('nouvel-eleve');
+            listeElevesElement = document.getElementById('liste-eleves');
+            btnAjouterEleveElement = document.getElementById('btn-ajouter-eleve');
+            gestionElevesContentElement = document.getElementById('gestion-eleves-content');
+            
+            // Ajouter un écouteur d'événement pour le sélecteur de classe
+            classeGestionElement.addEventListener('change', () => {
+                const classeId = classeGestionElement.value;
+                if (classeId) {
+                    mettreAJourListeEleves(classeId);
+                    gestionElevesContentElement.style.display = 'block';
+                } else {
+                    gestionElevesContentElement.style.display = 'none';
+                }
+            });
+            
+            // Ajouter un écouteur d'événement pour le bouton d'ajout d'élève
+            btnAjouterEleveElement.addEventListener('click', ajouterEleve);
+            
+            // Permettre d'ajouter en appuyant sur Entrée
+            nouvelEleveElement.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    ajouterEleve();
+                }
+            });
+            
+            // Ajouter des styles pour les animations des messages
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+        
+        // Fonction pour connecter au WebSocket
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('Connecté au serveur WebSocket');
+                statusElement.textContent = 'Connecté';
+                statusElement.classList.remove('offline');
+                statusElement.classList.add('online');
+                
+                if (reconnectionTimer) {
+                    clearTimeout(reconnectionTimer);
+                    reconnectionTimer = null;
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('Erreur WebSocket:', error);
+            };
+            
+            ws.onclose = () => {
+                console.log('Déconnecté du serveur WebSocket');
+                statusElement.textContent = 'Déconnecté';
+                statusElement.classList.remove('online');
+                statusElement.classList.add('offline');
+                
+                if (!reconnectionTimer) {
+                    reconnectionTimer = setTimeout(() => {
+                        connectWebSocket();
+                        reconnectionTimer = null;
+                    }, 5000);
+                }
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    
+                    if (message.type === 'ADMIN_DATA') {
+                        adminData = message.data;
+                        mettreAJourListeClasses();
+                        
+                        // Mettre à jour la liste des élèves si une classe est sélectionnée
+                        const classeId = classeGestionElement.value;
+                        if (classeId) {
+                            mettreAJourListeEleves(classeId);
+                        }
+                    }
+                    // Ajout des gestionnaires pour les confirmations d'ajout/suppression d'élèves
+                    else if (message.type === 'ADD_STUDENT_CONFIRM') {
+                        if (message.success) {
+                            // Afficher un message de succès temporaire
+                            afficherMessage(message.message, 'success');
+                        } else {
+                            // Afficher un message d'erreur
+                            afficherMessage(message.message, 'error');
+                        }
+                    }
+                    else if (message.type === 'DELETE_STUDENT_CONFIRM') {
+                        if (message.success) {
+                            // Afficher un message de succès temporaire
+                            afficherMessage(message.message, 'success');
+                        } else {
+                            // Afficher un message d'erreur
+                            afficherMessage(message.message, 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du traitement du message:', error);
+                }
+            };
+        }
+        
+        // Fonction pour mettre à jour la liste des classes
+        function mettreAJourListeClasses() {
+            // Vider la liste des classes
+            listeClassesElement.innerHTML = '';
+            classeImportElement.innerHTML = '<option value="">Sélectionnez une classe</option>';
+            
+            // Ajouter chaque classe à la liste
+            if (adminData && adminData.classes) {
+                Object.entries(adminData.classes).forEach(([classeId, classe]) => {
+                    // Ajouter à la liste des classes
+                    const li = document.createElement('li');
+                    li.className = 'class-item';
+                    li.innerHTML = `
+                        <div>
+                            <span class="class-name">${classe.nom}</span>
+                            <span class="student-count">${classe.eleves ? classe.eleves.length : 0} élèves</span>
+                        </div>
+                        <div>
+                            <button class="button delete" onclick="viderClasseEleves('${classeId}')" style="margin-right: 5px;">Vider</button>
+                            <button class="button delete" onclick="supprimerClasse('${classeId}')">Supprimer</button>
+                        </div>
+                    `;
+                    listeClassesElement.appendChild(li);
+                    
+                    // Ajouter à la liste déroulante pour l'importation
+                    const option = document.createElement('option');
+                    option.value = classeId;
+                    option.textContent = classe.nom;
+                    classeImportElement.appendChild(option);
+                    
+                    // Mettre également à jour la liste des classes pour la gestion manuelle
+                    const optionGestion = document.createElement('option');
+                    optionGestion.value = classeId;
+                    optionGestion.textContent = classe.nom;
+                    classeGestionElement.appendChild(optionGestion);
+                });
+            }
+            
+            // Si nous avons des données d'importation avec des classes détectées, les ajouter à la liste
+            if (donneesImport && donneesImport.classesDetectees) {
+                Object.entries(donneesImport.classesDetectees).forEach(([classeNom, eleves]) => {
+                    // Vérifier si la classe existe déjà
+                    const classeExiste = Object.values(adminData.classes).some(c => c.nom === classeNom);
+                    
+                    if (!classeExiste) {
+                        // Créer un ID de classe à partir du nom
+                        const classeId = 'classe-' + classeNom.toLowerCase().replace(/\s+/g, '-');
+                        
+                        // Ajouter à la liste déroulante pour l'importation
+                        const option = document.createElement('option');
+                        option.value = classeId;
+                        option.textContent = `${classeNom} (Nouvelle - ${eleves.length} élèves)`;
+                        option.style.color = '#4CAF50';
+                        option.style.fontWeight = 'bold';
+                        classeImportElement.appendChild(option);
+                        
+                        // Sélectionner automatiquement cette option si c'est la seule nouvelle classe
+                        if (Object.keys(donneesImport.classesDetectees).length === 1) {
+                            classeImportElement.value = classeId;
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Fonction pour ajouter une classe
+        function ajouterClasse() {
+            const nomClasse = nouvelleClasseElement.value.trim();
+            
+            if (!nomClasse) {
+                alert('Veuillez entrer un nom de classe');
+                return;
+            }
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'ADD_CLASS',
+                    nom: nomClasse
+                }));
+                
+                nouvelleClasseElement.value = '';
+            }
+        }
+        
+        // Fonction pour supprimer une classe
+        function supprimerClasse(classeId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette classe ?')) {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'DELETE_CLASS',
+                        classeId: classeId
+                    }));
+                }
+            }
+        }
+        
+        // Fonction pour vider les élèves d'une classe
+        function viderClasseEleves(classeId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer tous les élèves de cette classe ?')) {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'CLEAR_CLASS_STUDENTS',
+                        classeId: classeId
+                    }));
+                }
+            }
+        }
+        
+        // Fonction pour vider la liste d'élèves dans le champ de texte
+        function viderListe() {
+            csvInputElement.value = '';
+            previewElement.innerHTML = '';
+            donneesImport = null;
+        }
+        
+        // Fonction pour basculer entre les sources de données
+        function toggleSource(source) {
+            sourceActive = source;
+            
+            // Mettre à jour l'affichage des boutons
+            document.getElementById('btn-fichier').classList.toggle('delete', source !== 'fichier');
+            document.getElementById('btn-texte').classList.toggle('delete', source !== 'texte');
+            
+            // Afficher/masquer les sections correspondantes
+            document.getElementById('source-fichier').style.display = source === 'fichier' ? 'block' : 'none';
+            document.getElementById('source-texte').style.display = source === 'texte' ? 'block' : 'none';
+        }
+        
+        // Fonction pour gérer la sélection d'un fichier
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    csvInputElement.value = e.target.result;
+                    previsualiserImport();
+                };
+                reader.readAsText(file);
+            }
+        }
+        
+        // Fonction pour détecter automatiquement le format des données
+        function detecterFormat(donnees) {
+            // Échantillon de lignes pour la détection
+            const lignes = donnees.split(/\r?\n/).filter(l => l.trim() !== '');
+            if (lignes.length === 0) return { separateur: ',', format: 'nom_complet' };
+            
+            // Tester différents séparateurs
+            const separateurs = ['\t', ';', ',', ' '];
+            let meilleurSeparateur = '';
+            let meilleurScore = 0;
+            
+            // Analyse plus sophistiquée des séparateurs potentiels
+            for (const sep of separateurs) {
+                // Compter combien de lignes ont le même nombre de colonnes
+                const compteurColonnes = {};
+                let totalColonnes = 0;
+                let lignesValides = 0;
+                
+                // Analyser plus de lignes pour une meilleure précision
+                const echantillon = lignes.slice(0, Math.min(20, lignes.length));
+                
+                echantillon.forEach(ligne => {
+                    const colonnes = ligne.split(sep).filter(c => c.trim() !== '');
+                    const nbColonnes = colonnes.length;
+                    
+                    if (nbColonnes > 1) {  // Ignorer les lignes qui ne seraient pas séparées
+                        compteurColonnes[nbColonnes] = (compteurColonnes[nbColonnes] || 0) + 1;
+                        totalColonnes += nbColonnes;
+                        lignesValides++;
+                    }
+                });
+                
+                // Trouver le nombre de colonnes le plus fréquent
+                let maxCount = 0;
+                let nbColonnesFrequent = 0;
+                for (const [nbCol, count] of Object.entries(compteurColonnes)) {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        nbColonnesFrequent = parseInt(nbCol);
+                    }
+                }
+                
+                // Calculer un score basé sur:
+                // 1. La cohérence (nombre de lignes ayant le même nombre de colonnes)
+                // 2. Le nombre de colonnes (plus de colonnes = meilleure séparation)
+                // 3. Le pourcentage de lignes valides
+                const coherence = maxCount / echantillon.length;
+                const moyenneColonnes = lignesValides > 0 ? totalColonnes / lignesValides : 0;
+                const pourcentageValide = lignesValides / echantillon.length;
+                
+                // Formule de score améliorée
+                const score = coherence * moyenneColonnes * pourcentageValide * 100;
+                
+                console.log(`Séparateur '${sep === '\t' ? 'TAB' : sep}': score=${score.toFixed(2)}, cohérence=${coherence.toFixed(2)}, colonnes=${moyenneColonnes.toFixed(2)}, validité=${pourcentageValide.toFixed(2)}`);
+                
+                if (score > meilleurScore) {
+                    meilleurScore = score;
+                    meilleurSeparateur = sep;
+                }
+            }
+            
+            // Si aucun séparateur n'est clairement identifié, utiliser l'espace
+            if (meilleurSeparateur === '' || meilleurScore < 1) {
+                meilleurSeparateur = ' ';
+            }
+            
+            // Détecter le format (NOM Prénom Classe ou autre)
+            let format = 'nom_complet';
+            
+            // Analyser quelques lignes pour détecter le format
+            const echantillon = lignes.slice(0, Math.min(5, lignes.length));
+            const colonnesParLigne = echantillon.map(ligne => 
+                ligne.split(meilleurSeparateur).filter(c => c.trim() !== '')
+            );
+            
+            // Si la plupart des lignes ont 3 colonnes ou plus, c'est probablement NOM Prénom Classe
+            const nbColonnesMoyen = colonnesParLigne.reduce((sum, cols) => sum + cols.length, 0) / colonnesParLigne.length;
+            
+            if (nbColonnesMoyen >= 2.5) {
+                // Vérifier si le premier élément est en majuscules (NOM)
+                const premierElementMajuscules = colonnesParLigne.filter(cols => 
+                    cols.length > 0 && cols[0] === cols[0].toUpperCase()
+                ).length / colonnesParLigne.length > 0.7;
+                
+                if (premierElementMajuscules) {
+                    format = 'nom,prenom,classe';
+                }
+            }
+            
+            // Détecter si la dernière colonne contient des noms de classe
+            let classesDetectees = new Set();
+            colonnesParLigne.forEach(cols => {
+                if (cols.length >= 3) {
+                    const potentielleClasse = cols[cols.length - 1].trim();
+                    if (potentielleClasse.length > 0) {
+                        classesDetectees.add(potentielleClasse);
+                    }
+                }
+            });
+            
+            // Si nous avons détecté plusieurs classes différentes, c'est un bon indicateur
+            // que le format inclut une colonne de classe
+            if (classesDetectees.size >= 2 && classesDetectees.size <= echantillon.length / 2) {
+                format = 'nom,prenom,classe';
+            }
+            
+            console.log(`Format détecté: séparateur='${meilleurSeparateur === '\t' ? 'TAB' : meilleurSeparateur}', format=${format}, score=${meilleurScore.toFixed(2)}`);
+            
+            return { 
+                separateur: meilleurSeparateur,
+                format: format
+            };
+        }
+        
+        // Fonction pour prévisualiser l'importation
+        function previsualiserImport() {
+            const csvData = csvInputElement.value.trim();
+            
+            if (!csvData) {
+                alert('Veuillez entrer des données');
+                return;
+            }
+            
+            // Détecter automatiquement le format
+            const { separateur, format } = detecterFormat(csvData);
+            
+            // Traiter les données
+            donneesImport = traiterDonnees(csvData, separateur, format);
+            
+            // Mettre à jour la liste des classes avec les nouvelles classes détectées
+            mettreAJourListeClasses();
+            
+            // Afficher la prévisualisation
+            previewElement.innerHTML = '';
+            
+            if (donneesImport.eleves.length === 0) {
+                previewElement.innerHTML = '<p>Aucun élève trouvé dans les données.</p>';
+                return;
+            }
+            
+            // Créer un tableau pour afficher les classes détectées
+            if (Object.keys(donneesImport.classesDetectees).length > 0) {
+                const classesTable = document.createElement('table');
+                classesTable.style.width = '100%';
+                classesTable.style.borderCollapse = 'collapse';
+                classesTable.style.marginBottom = '20px';
+                
+                // En-tête du tableau des classes
+                const classesThead = document.createElement('thead');
+                const classesHeaderRow = document.createElement('tr');
+                classesHeaderRow.innerHTML = `
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f0f8ff;">Classes détectées</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f0f8ff;">Nombre d'élèves</th>
+                `;
+                classesThead.appendChild(classesHeaderRow);
+                classesTable.appendChild(classesThead);
+                
+                // Corps du tableau des classes
+                const classesTbody = document.createElement('tbody');
+                Object.entries(donneesImport.classesDetectees).forEach(([classeNom, eleves], index) => {
+                    const row = document.createElement('tr');
+                    row.style.backgroundColor = index % 2 === 0 ? '#f2f2f2' : 'white';
+                    row.innerHTML = `
+                        <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${classeNom}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${eleves.length} élèves</td>
+                    `;
+                    classesTbody.appendChild(row);
+                });
+                classesTable.appendChild(classesTbody);
+                
+                // Ajouter le tableau des classes à la prévisualisation
+                const classesDiv = document.createElement('div');
+                classesDiv.style.marginBottom = '20px';
+                classesDiv.innerHTML = '<h4 style="color: #4CAF50;">Classes détectées automatiquement</h4>';
+                classesDiv.appendChild(classesTable);
+                previewElement.appendChild(classesDiv);
+            }
+            
+            // Créer un tableau pour afficher les élèves
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            
+            // En-tête du tableau
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = `
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Nom complet</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Classe détectée</th>
+            `;
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Corps du tableau
+            const tbody = document.createElement('tbody');
+            donneesImport.eleves.forEach((eleve, index) => {
+                const row = document.createElement('tr');
+                row.style.backgroundColor = index % 2 === 0 ? '#f2f2f2' : 'white';
+                row.innerHTML = `
+                    <td style="border: 1px solid #ddd; padding: 8px;">${eleve.nom}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${eleve.classe || 'Non détectée'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            table.appendChild(tbody);
+            
+            // Ajouter le tableau des élèves à la prévisualisation
+            const elevesDiv = document.createElement('div');
+            elevesDiv.innerHTML = '<h4>Liste des élèves</h4>';
+            elevesDiv.appendChild(table);
+            previewElement.appendChild(elevesDiv);
+            
+            // Afficher les informations sur le format détecté
+            const infoFormat = document.createElement('div');
+            infoFormat.style.marginTop = '20px';
+            infoFormat.style.padding = '10px';
+            infoFormat.style.backgroundColor = '#e9f7ef';
+            infoFormat.style.borderRadius = '4px';
+            infoFormat.innerHTML = `
+                <p><strong>Format détecté automatiquement :</strong></p>
+                <ul>
+                    <li>Séparateur : ${separateur === '\t' ? 'Tabulation' : separateur === ' ' ? 'Espace' : `'${separateur}'`}</li>
+                    <li>Format : ${format === 'nom,prenom,classe' ? 'NOM Prénom Classe' : 'Format libre'}</li>
+                    <li>${donneesImport.eleves.length} élèves trouvés</li>
+                    <li>${Object.keys(donneesImport.classesDetectees).length} classes détectées</li>
+                </ul>
+                <p style="margin-top: 10px;"><strong>Note :</strong> ${autoCreateClassesElement.checked ? 
+                    'Les classes détectées seront créées automatiquement si elles n\'existent pas déjà.' : 
+                    'Vous devez sélectionner une classe existante pour importer les élèves.'}</p>
+            `;
+            previewElement.appendChild(infoFormat);
+        }
+        
+        // Fonction pour traiter les données
+        function traiterDonnees(donnees, separateur, format) {
+            // Diviser les lignes
+            let lignes = donnees.split(/\r?\n/);
+            
+            // Filtrer les lignes vides
+            lignes = lignes.filter(ligne => ligne.trim() !== '');
+            
+            // Stocker les élèves par classe
+            const classesDetectees = {};
+            
+            // Traiter chaque ligne selon le format détecté
+            const eleves = lignes.map((ligne, index) => {
+                // Diviser la ligne en colonnes en utilisant le séparateur détecté
+                const colonnes = ligne.split(separateur).filter(c => c.trim() !== '');
+                
+                if (colonnes.length === 0) return { nom: '', classe: '' };
+                
+                let nomEleve = '';
+                let classeEleve = '';
+                
+                // Traitement spécial pour les formats courants
+                if (format === 'nom,prenom,classe' && colonnes.length >= 3) {
+                    // Format NOM Prénom Classe
+                    // Prendre les colonnes du milieu comme prénom si plus de 3 colonnes
+                    const prenoms = colonnes.slice(1, colonnes.length - 1).join(' ');
+                    nomEleve = `${colonnes[0]} ${prenoms}`.trim();
+                    classeEleve = colonnes[colonnes.length - 1].trim();
+                } else if (colonnes.length >= 2) {
+                    // Format avec au moins 2 colonnes - essayer de détecter intelligemment
+                    
+                    // Vérifier si la dernière colonne ressemble à une classe (courte, souvent avec chiffres)
+                    const dernierElement = colonnes[colonnes.length - 1].trim();
+                    const ressembleAClasse = /^[A-Za-z0-9\-]{1,10}$/.test(dernierElement) || 
+                                            /\d/.test(dernierElement) ||
+                                            /^[A-Z]{1,3}[0-9]?$/.test(dernierElement);
+                    
+                    if (ressembleAClasse) {
+                        // Si la dernière colonne ressemble à une classe, l'utiliser comme classe
+                        classeEleve = dernierElement;
+                        nomEleve = colonnes.slice(0, colonnes.length - 1).join(' ').trim();
+                    } else {
+                        // Sinon, prendre toute la ligne comme nom d'élève
+                        nomEleve = ligne.trim();
+                    }
+                } else {
+                    // Format simple - une seule colonne
+                    nomEleve = ligne.trim();
+                    
+                    // Essayer de détecter si le nom contient une classe à la fin
+                    const match = nomEleve.match(/(.+)\s+([A-Za-z0-9\-]{1,10})$/);
+                    if (match && /\d/.test(match[2])) {
+                        nomEleve = match[1].trim();
+                        classeEleve = match[2].trim();
+                    }
+                }
+                
+                // Normaliser le nom (supprimer les espaces multiples)
+                nomEleve = nomEleve.replace(/\s+/g, ' ').trim();
+                
+                // Ajouter l'élève à sa classe détectée
+                if (classeEleve) {
+                    if (!classesDetectees[classeEleve]) {
+                        classesDetectees[classeEleve] = [];
+                    }
+                    classesDetectees[classeEleve].push(nomEleve);
+                }
+                
+                return { nom: nomEleve, classe: classeEleve };
+            }).filter(eleve => eleve.nom !== '');
+            
+            return { eleves, classesDetectees };
+        }
+        
+        // Fonction pour importer les élèves
+        function importerEleves() {
+            if (!donneesImport || donneesImport.eleves.length === 0) {
+                alert('Veuillez d\'abord prévisualiser les données');
+                return;
+            }
+            
+            const autoCreateClasses = autoCreateClassesElement.checked;
+            const classeId = classeImportElement.value;
+            
+            // Si l'option de création automatique est activée et qu'il y a des classes détectées
+            if (autoCreateClasses && Object.keys(donneesImport.classesDetectees).length > 0) {
+                // Créer les classes et importer les élèves
+                importerAvecClassesAutomatiques();
+            } else if (classeId) {
+                // Importer tous les élèves dans la classe sélectionnée
+                importerDansClasseExistante(classeId);
+            } else {
+                alert('Veuillez sélectionner une classe ou activer la création automatique des classes');
+            }
+        }
+        
+        // Fonction pour importer les élèves avec création automatique des classes
+        function importerAvecClassesAutomatiques() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'IMPORT_CLASSES_WITH_STUDENTS',
+                    classes: donneesImport.classesDetectees
+                }));
+                
+                alert('Importation lancée. Les classes seront créées automatiquement.');
+                csvInputElement.value = '';
+                previewElement.innerHTML = '';
+                donneesImport = null;
+            }
+        }
+        
+        // Fonction pour importer les élèves dans une classe existante
+        function importerDansClasseExistante(classeId) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                // Extraire les noms d'élèves
+                const nomsEleves = donneesImport.eleves.map(eleve => eleve.nom);
+                
+                ws.send(JSON.stringify({
+                    type: 'IMPORT_STUDENTS',
+                    classeId: classeId,
+                    eleves: nomsEleves
+                }));
+                
+                alert(`${nomsEleves.length} élèves importés avec succès.`);
+                csvInputElement.value = '';
+                previewElement.innerHTML = '';
+                donneesImport = null;
+            }
+        }
+        
+        // Fonction pour mettre à jour la liste des élèves pour la classe sélectionnée
+        function mettreAJourListeEleves(classeId) {
+            listeElevesElement.innerHTML = '';
+            
+            if (adminData && adminData.classes && adminData.classes[classeId]) {
+                const classe = adminData.classes[classeId];
+                
+                if (classe.eleves && classe.eleves.length > 0) {
+                    classe.eleves.forEach((eleve, index) => {
+                        const li = document.createElement('li');
+                        li.className = 'student-item';
+                        li.innerHTML = `
+                            <span class="student-name">${eleve}</span>
+                            <button class="button delete-small" onclick="supprimerEleve('${classeId}', ${index})">
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        `;
+                        listeElevesElement.appendChild(li);
+                    });
+                } else {
+                    listeElevesElement.innerHTML = '<li>Aucun élève dans cette classe</li>';
+                }
+            }
+        }
+        
+        // Fonction pour ajouter un élève
+        function ajouterEleve() {
+            const classeId = classeGestionElement.value;
+            const nomEleve = nouvelEleveElement.value.trim();
+            
+            if (!classeId) {
+                alert('Veuillez sélectionner une classe');
+                return;
+            }
+            
+            if (!nomEleve) {
+                alert('Veuillez entrer un nom d\'élève');
+                return;
+            }
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'ADD_STUDENT',
+                    classeId: classeId,
+                    nomEleve: nomEleve
+                }));
+                
+                // Vider le champ de saisie
+                nouvelEleveElement.value = '';
+                nouvelEleveElement.focus();
+            }
+        }
+        
+        // Fonction pour supprimer un élève
+        function supprimerEleve(classeId, index) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet élève ?')) {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'DELETE_STUDENT',
+                        classeId: classeId,
+                        index: index
+                    }));
+                }
+            }
+        }
+        
+        // Fonction pour afficher un message temporaire
+        function afficherMessage(message, type) {
+            // Créer un élément de message
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${type}`;
+            messageElement.textContent = message;
+            messageElement.style.position = 'fixed';
+            messageElement.style.top = '20px';
+            messageElement.style.right = '20px';
+            messageElement.style.padding = '10px 20px';
+            messageElement.style.borderRadius = '4px';
+            messageElement.style.zIndex = '1000';
+            messageElement.style.animation = 'fadeIn 0.3s, fadeOut 0.3s 2.7s';
+            messageElement.style.animationFillMode = 'forwards';
+            
+            // Définir la couleur en fonction du type
+            if (type === 'success') {
+                messageElement.style.backgroundColor = '#4CAF50';
+                messageElement.style.color = 'white';
+            } else if (type === 'error') {
+                messageElement.style.backgroundColor = '#f44336';
+                messageElement.style.color = 'white';
+            }
+            
+            // Ajouter au corps du document
+            document.body.appendChild(messageElement);
+            
+            // Supprimer après 3 secondes
+            setTimeout(() => {
+                document.body.removeChild(messageElement);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

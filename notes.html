@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes - Plan de Classe Participatif</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+        }
+        
+        .status-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .online {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .offline {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        .navigation-bar {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e9f7ef;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .navigation-bar a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .navigation-bar a:last-child {
+            margin-right: 0;
+        }
+        
+        .selection-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .selection-box {
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .notes-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .notes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .notes-table th, .notes-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .notes-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        
+        .notes-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .notes-table tr:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .note-a {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .note-b {
+            color: #2196F3;
+            font-weight: bold;
+        }
+        
+        .note-c {
+            color: #FF9800;
+            font-weight: bold;
+        }
+        
+        .note-d {
+            color: #F44336;
+            font-weight: bold;
+        }
+        
+        .note-e {
+            color: #9C27B0;
+            font-weight: bold;
+        }
+        
+        .moyenne-generale {
+            margin-top: 20px;
+            text-align: right;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .legende {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f0f8f0;
+            border-radius: 5px;
+        }
+        
+        .legende h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        
+        .legende-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        /* Styles responsives pour mobile */
+        @media (max-width: 768px) {
+            .navigation-bar a {
+                display: inline-block;
+                margin: 5px 10px;
+            }
+            
+            .notes-table th, .notes-table td {
+                padding: 8px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="status" class="status-indicator offline">Déconnecté</div>
+    
+    <h1>Notes des Élèves</h1>
+    
+    <div class="navigation-bar">
+        <a href="index1.html">Plan de Classe</a>
+        <a href="evaluation.html">Évaluation</a>
+        <a href="admin.html">Administration</a>
+        <a href="notes.html">Notes</a>
+    </div>
+    
+    <div class="selection-container">
+        <div class="selection-box">
+            <label for="choix-classe">Classe :</label>
+            <select id="choix-classe">
+                <option value="">Sélectionnez une classe</option>
+            </select>
+        </div>
+        
+        <div class="selection-box">
+            <label for="choix-groupe">Groupe :</label>
+            <select id="choix-groupe" disabled>
+                <option value="">Sélectionnez un groupe</option>
+                <option value="groupe-1">Groupe 1</option>
+                <option value="groupe-2">Groupe 2</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="notes-container">
+        <div id="notes-content">
+            <p>Veuillez sélectionner une classe et un groupe pour afficher les notes.</p>
+        </div>
+        
+        <div class="legende">
+            <h3>Légende des notes</h3>
+            <div class="legende-item">
+                <span class="note-a">A</span>
+                <span>20 points</span>
+            </div>
+            <div class="legende-item">
+                <span class="note-b">B</span>
+                <span>15 points</span>
+            </div>
+            <div class="legende-item">
+                <span class="note-c">C</span>
+                <span>10 points</span>
+            </div>
+            <div class="legende-item">
+                <span class="note-d">D</span>
+                <span>5 points</span>
+            </div>
+            <div class="legende-item">
+                <span class="note-e">E</span>
+                <span>0 point</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Variables globales
+        let ws = null;
+        let reconnectionTimer = null;
+        let adminData = null;
+        let classeActuelle = '';
+        let groupeActuel = '';
+        let assignations = {};
+        let evaluations = {};
+        
+        // Correspondance des notes
+        const noteValues = {
+            'A': 20,
+            'B': 15,
+            'C': 10,
+            'D': 5,
+            'E': 0
+        };
+        
+        // Éléments DOM
+        const statusElement = document.getElementById('status');
+        const choixClasseElement = document.getElementById('choix-classe');
+        const choixGroupeElement = document.getElementById('choix-groupe');
+        const notesContentElement = document.getElementById('notes-content');
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            // Connecter au WebSocket
+            connectWebSocket();
+            
+            // Ajouter les écouteurs d'événements
+            choixClasseElement.addEventListener('change', onClasseChange);
+            choixGroupeElement.addEventListener('change', onGroupeChange);
+            
+            // Restaurer la sélection précédente
+            restaurerSelectionPrecedente();
+        });
+        
+        // Fonction pour connecter au WebSocket
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('Connecté au serveur WebSocket');
+                statusElement.textContent = 'Connecté';
+                statusElement.classList.remove('offline');
+                statusElement.classList.add('online');
+                
+                if (reconnectionTimer) {
+                    clearTimeout(reconnectionTimer);
+                    reconnectionTimer = null;
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('Erreur WebSocket:', error);
+            };
+            
+            ws.onclose = () => {
+                console.log('Déconnecté du serveur WebSocket');
+                statusElement.textContent = 'Déconnecté';
+                statusElement.classList.remove('online');
+                statusElement.classList.add('offline');
+                
+                if (!reconnectionTimer) {
+                    reconnectionTimer = setTimeout(() => {
+                        connectWebSocket();
+                        reconnectionTimer = null;
+                    }, 5000);
+                }
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    
+                    switch (message.type) {
+                        case 'ADMIN_DATA':
+                            adminData = message.data;
+                            mettreAJourListeClasses();
+                            restaurerSelectionPrecedente();
+                            break;
+                            
+                        case 'INIT':
+                            if (message.classe === classeActuelle && message.groupe === groupeActuel) {
+                                // Réinitialiser complètement les assignations et évaluations avec les données reçues
+                                assignations = message.assignations || {};
+                                evaluations = message.evaluations || {};
+                                console.log('Données reçues du serveur:', { assignations, evaluations });
+                                mettreAJourNotes();
+                            }
+                            break;
+                            
+                        case 'UPDATE':
+                            if (message.classe === classeActuelle && message.groupe === groupeActuel) {
+                                // Mettre à jour les assignations et évaluations avec les données reçues
+                                if (message.assignations) {
+                                    Object.assign(assignations, message.assignations);
+                                }
+                                if (message.evaluations) {
+                                    Object.assign(evaluations, message.evaluations);
+                                }
+                                mettreAJourNotes();
+                            }
+                            break;
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du traitement du message:', error);
+                }
+            };
+        }
+        
+        // Fonction pour mettre à jour la liste des classes
+        function mettreAJourListeClasses() {
+            choixClasseElement.innerHTML = '<option value="">Sélectionnez une classe</option>';
+            
+            if (adminData && adminData.classes) {
+                Object.entries(adminData.classes).forEach(([classeId, classe]) => {
+                    const option = document.createElement('option');
+                    option.value = classeId;
+                    option.textContent = classe.nom;
+                    choixClasseElement.appendChild(option);
+                });
+            }
+        }
+        
+        // Fonction pour restaurer la sélection précédente
+        function restaurerSelectionPrecedente() {
+            const derniereClasse = localStorage.getItem('derniereClasse');
+            const dernierGroupe = localStorage.getItem('dernierGroupe');
+            
+            if (derniereClasse && adminData && adminData.classes && adminData.classes[derniereClasse]) {
+                choixClasseElement.value = derniereClasse;
+                onClasseChange();
+                
+                if (dernierGroupe) {
+                    choixGroupeElement.value = dernierGroupe;
+                    onGroupeChange();
+                }
+            }
+        }
+        
+        // Fonction appelée lorsque la classe change
+        function onClasseChange() {
+            classeActuelle = choixClasseElement.value;
+            
+            if (classeActuelle) {
+                choixGroupeElement.disabled = false;
+                localStorage.setItem('derniereClasse', classeActuelle);
+            } else {
+                choixGroupeElement.disabled = true;
+                choixGroupeElement.value = '';
+                groupeActuel = '';
+                localStorage.removeItem('derniereClasse');
+                localStorage.removeItem('dernierGroupe');
+            }
+            
+            if (!groupeActuel) {
+                assignations = {};
+                evaluations = {};
+                mettreAJourNotes();
+            } else {
+                demanderAssignations();
+            }
+        }
+        
+        // Fonction appelée lorsque le groupe change
+        function onGroupeChange() {
+            groupeActuel = choixGroupeElement.value;
+            
+            if (groupeActuel) {
+                localStorage.setItem('dernierGroupe', groupeActuel);
+                demanderAssignations();
+            } else {
+                localStorage.removeItem('dernierGroupe');
+                assignations = {};
+                evaluations = {};
+                mettreAJourNotes();
+            }
+        }
+        
+        // Fonction pour demander les assignations au serveur
+        function demanderAssignations() {
+            if (ws && ws.readyState === WebSocket.OPEN && classeActuelle && groupeActuel) {
+                ws.send(JSON.stringify({
+                    type: 'GET_ASSIGNMENTS',
+                    classe: classeActuelle,
+                    groupe: groupeActuel
+                }));
+            }
+        }
+        
+        // Fonction pour mettre à jour l'affichage des notes
+        function mettreAJourNotes() {
+            if (!classeActuelle || !groupeActuel) {
+                notesContentElement.innerHTML = '<p>Veuillez sélectionner une classe et un groupe pour afficher les notes.</p>';
+                return;
+            }
+            
+            // Récupérer tous les élèves assignés
+            const eleves = new Set();
+            Object.values(assignations).forEach(eleve => {
+                if (eleve) eleves.add(eleve);
+            });
+            
+            // Si aucun élève n'est assigné
+            if (eleves.size === 0) {
+                notesContentElement.innerHTML = '<p>Aucun élève assigné dans ce groupe.</p>';
+                return;
+            }
+            
+            // Trier les élèves par ordre alphabétique
+            const elevesTriés = Array.from(eleves).sort();
+            
+            // Créer le tableau des notes
+            let tableHTML = `
+                <table class="notes-table">
+                    <thead>
+                        <tr>
+                            <th>Élève</th>
+                            <th>Notes</th>
+                            <th>Moyenne</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            let sommeGenerale = 0;
+            let nombreNotesGenerales = 0;
+            
+            elevesTriés.forEach(eleve => {
+                const notesEleve = evaluations[eleve] || {};
+                const notesArray = [];
+                let somme = 0;
+                let nombreNotes = 0;
+                
+                // Récupérer toutes les notes de l'élève
+                Object.entries(notesEleve).forEach(([comp, note]) => {
+                    if (note && noteValues[note] !== undefined) {
+                        notesArray.push(`<span class="note-${note.toLowerCase()}">${note}</span> (${comp})`);
+                        somme += noteValues[note];
+                        nombreNotes++;
+                    }
+                });
+                
+                // Calculer la moyenne de l'élève
+                const moyenne = nombreNotes > 0 ? (somme / nombreNotes).toFixed(2) : '-';
+                
+                // Ajouter à la somme générale
+                if (nombreNotes > 0) {
+                    sommeGenerale += somme;
+                    nombreNotesGenerales += nombreNotes;
+                }
+                
+                // Ajouter la ligne au tableau
+                tableHTML += `
+                    <tr>
+                        <td>${eleve}</td>
+                        <td>${notesArray.length > 0 ? notesArray.join(', ') : 'Aucune note'}</td>
+                        <td>${moyenne}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            // Calculer la moyenne générale
+            const moyenneGenerale = nombreNotesGenerales > 0 ? (sommeGenerale / nombreNotesGenerales).toFixed(2) : '-';
+            
+            // Ajouter la moyenne générale
+            tableHTML += `
+                <div class="moyenne-generale">
+                    Moyenne générale du groupe: ${moyenneGenerale}
+                </div>
+            `;
+            
+            // Mettre à jour le contenu
+            notesContentElement.innerHTML = tableHTML;
+        }
+    </script>
+</body>
+</html> 

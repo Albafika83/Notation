@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Évaluation - Plan de Classe Participatif</title>
+    <style>
+        /* Les styles restent identiques */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            overflow-x: hidden; /* Assurer qu'il n'y a pas de défilement horizontal au niveau du body */
+        }
+        
+        .status-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .online {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .offline {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        .navigation-bar {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e9f7ef;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .navigation-bar a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .navigation-bar a:last-child {
+            margin-right: 0;
+        }
+        
+        .selection-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap; /* Permettre aux éléments de passer à la ligne sur petit écran */
+        }
+        
+        .selection-box {
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .competences-container {
+            background-color: #f0f8f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        .competences-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4CAF50;
+            text-align: center;
+        }
+        
+        .competences-selection {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .comp-select-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+        
+        .comp-select-box select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #4CAF50;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+        
+        .classroom-container {
+            width: 100%;
+            overflow-x: auto; /* Activer le défilement horizontal si nécessaire */
+            -webkit-overflow-scrolling: touch; /* Défilement fluide sur iOS */
+        }
+        
+        .classroom {
+            min-width: 800px; /* Largeur minimale pour assurer que tout le contenu soit visible */
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .teacher-desk {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            width: 200px;
+        }
+        
+        .row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        
+        .seat-group {
+            display: flex;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .seat-group:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .seat-group-left {
+            margin-right: 40px;
+        }
+        
+        .seat-group-right {
+            margin-left: 40px;
+        }
+        
+        .seat {
+            width: 120px;
+            margin: 0 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .seat-label {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .seat-occupant {
+            margin-top: 5px;
+            font-weight: bold;
+            color: #333;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        
+        /* Style pour le modal d'évaluation */
+        .evaluation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .evaluation-table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        .evaluation-table {
+            width: 100%;
+            min-width: 600px; /* Assure une largeur minimale pour le tableau */
+            border-collapse: collapse;
+        }
+        
+        .evaluation-table th, .evaluation-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .evaluation-table th {
+            background-color: #f5f5f5;
+        }
+        
+        .evaluation-table select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .group-controls {
+            background-color: #e9f7ef;
+            border-bottom: 2px solid #4CAF50;
+        }
+        
+        .group-controls td {
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .group-controls select {
+            background-color: #e9f7ef;
+            border: 1px solid #4CAF50;
+            font-weight: bold;
+        }
+        
+        .close-modal {
+            float: right;
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+        }
+        
+        .close-modal:hover {
+            color: #000;
+        }
+        
+        .save-evaluations {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .save-evaluations:hover {
+            background-color: #45a049;
+        }
+        
+        /* Styles responsives pour mobile */
+        @media (max-width: 768px) {
+            .navigation-bar a {
+                display: inline-block;
+                margin: 5px 10px;
+            }
+            
+            .seat {
+                width: 100px; /* Réduire légèrement la taille sur mobile */
+            }
+            
+            .comp-select-box {
+                min-width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="status" class="status-indicator offline">Déconnecté</div>
+    
+    <h1>Évaluation des Compétences</h1>
+    
+    <div class="navigation-bar">
+        <a href="index1.html">Plan de Classe</a>
+        <a href="evaluation.html">Évaluation</a>
+        <a href="admin.html">Administration</a>
+        <a href="notes.html">Notes</a>
+    </div>
+    
+    <div class="selection-container">
+        <div class="selection-box">
+            <label for="choix-classe">Classe :</label>
+            <select id="choix-classe">
+                <option value="">Sélectionnez une classe</option>
+            </select>
+        </div>
+        
+        <div class="selection-box">
+            <label for="choix-groupe">Groupe :</label>
+            <select id="choix-groupe" disabled>
+                <option value="">Sélectionnez un groupe</option>
+                <option value="groupe-1">Groupe 1</option>
+                <option value="groupe-2">Groupe 2</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Section pour la sélection des compétences à évaluer -->
+    <div class="competences-container">
+        <div class="competences-title">Compétences à évaluer</div>
+        <div class="competences-selection">
+            <!-- Les 6 menus déroulants pour les compétences -->
+            <div class="comp-select-box">
+                <label for="comp-1">Comp. 1</label>
+                <select id="comp-1" class="competence-select">
+                    <option value="RCO">RCO</option>
+                    <option value="REA">REA</option>
+                    <option value="APP">APP</option>
+                    <option value="ANA">ANA</option>
+                    <option value="VAL">VAL</option>
+                    <option value="COM">COM</option>
+                    <option value="AUTO">AUTO</option>
+                </select>
+            </div>
+            
+            <div class="comp-select-box">
+                <label for="comp-2">Comp. 2</label>
+                <select id="comp-2" class="competence-select">
+                    <option value="RCO">RCO</option>
+                    <option value="REA" selected>REA</option>
+                    <option value="APP">APP</option>
+                    <option value="ANA">ANA</option>
+                    <option value="VAL">VAL</option>
+                    <option value="COM">COM</option>
+                    <option value="AUTO">AUTO</option>
+                </select>
+            </div>
+            
+            <div class="comp-select-box">
+                <label for="comp-3">Comp. 3</label>
+                <select id="comp-3" class="competence-select">
+                    <option value="RCO">RCO</option>
+                    <option value="REA">REA</option>
+                    <option value="APP">APP</option>
+                    <option value="ANA" selected>ANA</option>
+                    <option value="VAL">VAL</option>
+                    <option value="COM">COM</option>
+                    <option value="AUTO">AUTO</option>
+                </select>
+            </div>
+            
+            <div class="comp-select-box">
+                <label for="comp-4">Comp. 4</label>
+                <select id="comp-4" class="competence-select">
+                    <option value="RCO">RCO</option>
+                    <option value="REA">REA</option>
+                    <option value="APP">APP</option>
+                    <option value="ANA">ANA</option>
+                    <option value="VAL">VAL</option>
+                    <option value="COM" selected>COM</option>
+                    <option value="AUTO">AUTO</option>
+                </select>
+            </div>
+            
+            <div class="comp-select-box">
+                <label for="comp-5">Comp. 5</label>
+                <select id="comp-5" class="competence-select">
+                    <option value="RCO">RCO</option>
+                    <option value="REA">REA</option>
+                    <option value="APP">APP</option>
+                    <option value="ANA">ANA</option>
+                    <option value="VAL">VAL</option>
+                    <option value="COM">COM</option>
+                    <option value="AUTO" selected>AUTO</option>
+                </select>
+            </div>
+            
+            <div class="comp-select-box">
+                <label for="comp-6">Comp. 6</label>
+                <select id="comp-6" class="competence-select">
+                    <option value="">-</option>
+                    <option value="RCO">RCO</option>
+                    <option value="REA">REA</option>
+                    <option value="APP">APP</option>
+                    <option value="ANA">ANA</option>
+                    <option value="VAL" selected>VAL</option>
+                    <option value="COM">COM</option>
+                    <option value="AUTO">AUTO</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ajouter un conteneur avec défilement horizontal -->
+    <div class="classroom-container">
+        <div class="classroom">
+            <div class="teacher-desk">Bureau du professeur</div>
+            <!-- Les rangées seront générées dynamiquement ici -->
+        </div>
+    </div>
+    
+    <!-- Modal pour l'évaluation -->
+    <div id="evaluation-modal" class="evaluation-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Évaluation du Groupe <span id="groupe-eval"></span></h2>
+            <div class="evaluation-table-container">
+                <table class="evaluation-table">
+                    <thead id="evaluation-thead">
+                        <!-- L'en-tête sera généré dynamiquement en fonction des compétences sélectionnées -->
+                    </thead>
+                    <tbody id="evaluation-tbody">
+                        <!-- Les lignes seront générées dynamiquement ici -->
+                    </tbody>
+                </table>
+            </div>
+            <button class="save-evaluations" onclick="sauvegarderEvaluations()">Sauvegarder</button>
+        </div>
+    </div>
+    
+    <script>
+        // Variables globales
+        let ws = null;
+        let reconnectionTimer = null;
+        let adminData = null;
+        let classeActuelle = '';
+        let groupeActuel = '';
+        let assignations = {};
+        let evaluations = {};
+        let selectedCompetences = []; // Tableau pour stocker les compétences sélectionnées
+        
+        // Éléments DOM
+        const statusElement = document.getElementById('status');
+        const choixClasseElement = document.getElementById('choix-classe');
+        const choixGroupeElement = document.getElementById('choix-groupe');
+        const classroomElement = document.querySelector('.classroom');
+        const modalElement = document.getElementById('evaluation-modal');
+        const closeModalButton = document.querySelector('.close-modal');
+        const evaluationThead = document.getElementById('evaluation-thead');
+        const evaluationTbody = document.getElementById('evaluation-tbody');
+        const groupeEvalSpan = document.getElementById('groupe-eval');
+        const competenceSelects = document.querySelectorAll('.competence-select');
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            // Connecter au WebSocket
+            connectWebSocket();
+            
+            // Générer le plan de classe initial
+            genererPlanClasse();
+            
+            // Ajouter les écouteurs d'événements
+            choixClasseElement.addEventListener('change', onClasseChange);
+            choixGroupeElement.addEventListener('change', onGroupeChange);
+            
+            // Ajouter les écouteurs pour les groupes de sièges
+            document.querySelectorAll('.seat-group').forEach(group => {
+                group.addEventListener('click', onSeatGroupClick);
+            });
+            
+            // Fermer le modal
+            closeModalButton.addEventListener('click', () => {
+                modalElement.style.display = 'none';
+            });
+            
+            // Fermer le modal en cliquant en dehors
+            window.addEventListener('click', (event) => {
+                if (event.target === modalElement) {
+                    modalElement.style.display = 'none';
+                }
+            });
+            
+            // Ajouter les écouteurs pour les sélecteurs de compétences
+            competenceSelects.forEach(select => {
+                select.addEventListener('change', () => {
+                    // Sauvegarder la sélection
+                    sauvegarderSelectionCompetences();
+                });
+            });
+            
+            // Restaurer la sélection des compétences précédente
+            restaurerSelectionCompetences();
+        });
+        
+        // Fonction pour connecter au WebSocket
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('Connecté au serveur WebSocket');
+                statusElement.textContent = 'Connecté';
+                statusElement.classList.remove('offline');
+                statusElement.classList.add('online');
+                
+                if (reconnectionTimer) {
+                    clearTimeout(reconnectionTimer);
+                    reconnectionTimer = null;
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('Erreur WebSocket:', error);
+            };
+            
+            ws.onclose = () => {
+                console.log('Déconnecté du serveur WebSocket');
+                statusElement.textContent = 'Déconnecté';
+                statusElement.classList.remove('online');
+                statusElement.classList.add('offline');
+                
+                if (!reconnectionTimer) {
+                    reconnectionTimer = setTimeout(() => {
+                        connectWebSocket();
+                        reconnectionTimer = null;
+                    }, 5000);
+                }
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    
+                    switch (message.type) {
+                        case 'ADMIN_DATA':
+                            adminData = message.data;
+                            mettreAJourListeClasses();
+                            restaurerSelectionPrecedente();
+                            break;
+                            
+                        case 'INIT':
+                            if (message.classe === classeActuelle && message.groupe === groupeActuel) {
+                                // Réinitialiser complètement les assignations et évaluations avec les données reçues
+                                assignations = message.assignations || {};
+                                evaluations = message.evaluations || {};
+                                console.log('Données reçues du serveur:', { assignations, evaluations });
+                                mettreAJourAssignations();
+                            }
+                            break;
+                            
+                        case 'UPDATE':
+                            if (message.classe === classeActuelle && message.groupe === groupeActuel) {
+                                // Mettre à jour les assignations et évaluations avec les données reçues
+                                if (message.assignations) {
+                                    Object.assign(assignations, message.assignations);
+                                }
+                                if (message.evaluations) {
+                                    Object.assign(evaluations, message.evaluations);
+                                }
+                                mettreAJourAssignations();
+                            }
+                            break;
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du traitement du message:', error);
+                }
+            };
+        }
+        
+        // Fonction pour mettre à jour la liste des classes
+        function mettreAJourListeClasses() {
+            choixClasseElement.innerHTML = '<option value="">Sélectionnez une classe</option>';
+            
+            if (adminData && adminData.classes) {
+                Object.entries(adminData.classes).forEach(([classeId, classe]) => {
+                    const option = document.createElement('option');
+                    option.value = classeId;
+                    option.textContent = classe.nom;
+                    choixClasseElement.appendChild(option);
+                });
+            }
+        }
+        
+        // Fonction pour restaurer la sélection précédente
+        function restaurerSelectionPrecedente() {
+            const derniereClasse = localStorage.getItem('derniereClasse');
+            const dernierGroupe = localStorage.getItem('dernierGroupe');
+            
+            if (derniereClasse && adminData && adminData.classes && adminData.classes[derniereClasse]) {
+                choixClasseElement.value = derniereClasse;
+                onClasseChange();
+                
+                if (dernierGroupe) {
+                    choixGroupeElement.value = dernierGroupe;
+                    onGroupeChange();
+                }
+            }
+        }
+        
+        // Fonction pour sauvegarder la sélection des compétences
+        function sauvegarderSelectionCompetences() {
+            selectedCompetences = Array.from(competenceSelects).map(select => select.value).filter(value => value);
+            localStorage.setItem('selectedCompetences', JSON.stringify(selectedCompetences));
+            console.log('Compétences sauvegardées:', selectedCompetences);
+        }
+        
+        // Fonction pour restaurer la sélection des compétences
+        function restaurerSelectionCompetences() {
+            const savedCompetences = localStorage.getItem('selectedCompetences');
+            
+            if (savedCompetences) {
+                const competences = JSON.parse(savedCompetences);
+                
+                // Restaurer les sélections
+                competences.forEach((competence, index) => {
+                    if (index < competenceSelects.length && competence) {
+                        competenceSelects[index].value = competence;
+                    }
+                });
+            }
+            
+            // Mettre à jour la liste des compétences sélectionnées
+            sauvegarderSelectionCompetences();
+        }
+        
+        // Fonction appelée lorsque la classe change
+        function onClasseChange() {
+            classeActuelle = choixClasseElement.value;
+            
+            if (classeActuelle) {
+                choixGroupeElement.disabled = false;
+                localStorage.setItem('derniereClasse', classeActuelle);
+            } else {
+                choixGroupeElement.disabled = true;
+                choixGroupeElement.value = '';
+                groupeActuel = '';
+                localStorage.removeItem('derniereClasse');
+                localStorage.removeItem('dernierGroupe');
+            }
+            
+            if (!groupeActuel) {
+                assignations = {};
+                evaluations = {};
+                mettreAJourAssignations();
+            } else {
+                demanderAssignations();
+            }
+        }
+        
+        // Fonction appelée lorsque le groupe change
+        function onGroupeChange() {
+            groupeActuel = choixGroupeElement.value;
+            
+            if (groupeActuel) {
+                localStorage.setItem('dernierGroupe', groupeActuel);
+                demanderAssignations();
+            } else {
+                localStorage.removeItem('dernierGroupe');
+                assignations = {};
+                evaluations = {};
+                mettreAJourAssignations();
+            }
+        }
+        
+        // Fonction pour demander les assignations au serveur
+        function demanderAssignations() {
+            if (ws && ws.readyState === WebSocket.OPEN && classeActuelle && groupeActuel) {
+                ws.send(JSON.stringify({
+                    type: 'GET_ASSIGNMENTS',
+                    classe: classeActuelle,
+                    groupe: groupeActuel
+                }));
+            }
+        }
+        
+        // Fonction pour mettre à jour les assignations
+        function mettreAJourAssignations() {
+            // Régénérer le plan de classe
+            genererPlanClasse();
+            
+            document.querySelectorAll('.seat').forEach(seat => {
+                const seatId = seat.id;
+                const occupantElement = seat.querySelector('.seat-occupant');
+                const eleveAssigne = assignations[seatId];
+                
+                if (eleveAssigne) {
+                    occupantElement.textContent = eleveAssigne;
+                } else {
+                    occupantElement.textContent = '';
+                }
+            });
+        }
+        
+        // Fonction appelée lors du clic sur un groupe de sièges
+        function onSeatGroupClick(event) {
+            const seatGroup = event.currentTarget;
+            const seats = seatGroup.querySelectorAll('.seat');
+            const students = Array.from(seats)
+                .map(seat => assignations[seat.id])
+                .filter(student => student);
+            
+            if (students.length === 0) return;
+            
+            // Mettre à jour le modal
+            ouvrirModal(students, seatGroup.getAttribute('data-group'));
+        }
+        
+        // Fonction appelée lors du changement d'une évaluation
+        function onEvaluationChange(event) {
+            const select = event.target;
+            const student = select.dataset.student;
+            const comp = select.dataset.comp;
+            const value = select.value;
+            
+            // Mettre à jour les évaluations locales
+            if (!evaluations[student]) {
+                evaluations[student] = {};
+            }
+            evaluations[student][comp] = value;
+            
+            // Envoyer la mise à jour au serveur
+            if (ws && ws.readyState === WebSocket.OPEN && classeActuelle && groupeActuel) {
+                ws.send(JSON.stringify({
+                    type: 'UPDATE',
+                    classe: classeActuelle,
+                    groupe: groupeActuel,
+                    evaluations: {
+                        [student]: evaluations[student]
+                    }
+                }));
+            }
+        }
+        
+        // Fonction pour sauvegarder les évaluations
+        function sauvegarderEvaluations() {
+            const newEvaluations = {};
+            
+            document.querySelectorAll('#evaluation-tbody tr:not(.group-controls)').forEach(tr => {
+                const student = tr.querySelector('td').textContent;
+                newEvaluations[student] = {};
+                
+                tr.querySelectorAll('select').forEach(select => {
+                    const comp = select.getAttribute('data-comp');
+                    const value = select.value;
+                    if (value) {
+                        newEvaluations[student][comp] = value;
+                    }
+                });
+            });
+            
+            // Mettre à jour les évaluations locales
+            evaluations = newEvaluations;
+            
+            // Envoyer les mises à jour au serveur
+            if (ws && ws.readyState === WebSocket.OPEN && classeActuelle && groupeActuel) {
+                ws.send(JSON.stringify({
+                    type: 'UPDATE',
+                    classe: classeActuelle,
+                    groupe: groupeActuel,
+                    evaluations: newEvaluations
+                }));
+            }
+            
+            modalElement.style.display = 'none';
+        }
+        
+        // Fonction pour générer le plan de classe
+        function genererPlanClasse() {
+            // Vider le contenu existant après le bureau du professeur
+            const rows = classroomElement.querySelectorAll('.row');
+            rows.forEach(row => row.remove());
+            
+            // Générer 5 rangées
+            for (let i = 0; i < 5; i++) {
+                const row = document.createElement('div');
+                row.className = 'row';
+                
+                // Groupe de gauche
+                const leftGroup = document.createElement('div');
+                leftGroup.className = 'seat-group seat-group-left';
+                leftGroup.setAttribute('data-group', `row-${i+1}-left`);
+                leftGroup.onclick = () => ouvrirModal(getGroupStudents(leftGroup), leftGroup.getAttribute('data-group'));
+                
+                // Créer 3 sièges pour le groupe de gauche
+                for (let j = 0; j < 3; j++) {
+                    const seatNumber = i * 6 + j + 1;
+                    const seat = creerSiege(seatNumber);
+                    leftGroup.appendChild(seat);
+                }
+                
+                // Groupe de droite
+                const rightGroup = document.createElement('div');
+                rightGroup.className = 'seat-group seat-group-right';
+                rightGroup.setAttribute('data-group', `row-${i+1}-right`);
+                rightGroup.onclick = () => ouvrirModal(getGroupStudents(rightGroup), rightGroup.getAttribute('data-group'));
+                
+                // Créer 3 sièges pour le groupe de droite
+                for (let j = 0; j < 3; j++) {
+                    const seatNumber = i * 6 + j + 4;
+                    const seat = creerSiege(seatNumber);
+                    rightGroup.appendChild(seat);
+                }
+                
+                row.appendChild(leftGroup);
+                row.appendChild(rightGroup);
+                classroomElement.appendChild(row);
+            }
+        }
+        
+        // Fonction pour créer un siège
+        function creerSiege(number) {
+            const seat = document.createElement('div');
+            seat.className = 'seat';
+            seat.id = `seat-${number}`;
+            
+            const label = document.createElement('div');
+            label.className = 'seat-label';
+            label.textContent = `Siège ${number}`;
+            
+            const occupant = document.createElement('div');
+            occupant.className = 'seat-occupant';
+            occupant.textContent = assignations[`seat-${number}`] || '';
+            
+            seat.appendChild(label);
+            seat.appendChild(occupant);
+            
+            return seat;
+        }
+        
+        // Fonction pour récupérer les élèves d'un groupe
+        function getGroupStudents(groupElement) {
+            const seats = groupElement.querySelectorAll('.seat');
+            const students = [];
+            
+            seats.forEach(seat => {
+                const student = seat.querySelector('.seat-occupant').textContent;
+                if (student) {
+                    students.push(student);
+                }
+            });
+            
+            return students;
+        }
+        
+        // Fonction pour ouvrir le modal d'évaluation
+        function ouvrirModal(students, groupeName) {
+            // Mettre à jour le titre du groupe
+            document.getElementById('groupe-eval').textContent = groupeName || 'Groupe';
+            
+            // Mettre à jour les compétences sélectionnées
+            sauvegarderSelectionCompetences();
+            
+            // S'assurer qu'il y a au moins une compétence sélectionnée
+            if (selectedCompetences.length === 0) {
+                alert("Veuillez sélectionner au moins une compétence à évaluer.");
+                return;
+            }
+            
+            // Vider le contenu existant
+            const thead = document.getElementById('evaluation-thead');
+            thead.innerHTML = '';
+            const tbody = document.getElementById('evaluation-tbody');
+            tbody.innerHTML = '';
+            
+            // Créer l'en-tête du tableau
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = '<th>Élève</th>';
+            
+            // Ajouter les en-têtes des compétences sélectionnées
+            selectedCompetences.forEach((comp, index) => {
+                headerRow.innerHTML += `<th data-column="${index + 1}">${comp}</th>`;
+            });
+            
+            thead.appendChild(headerRow);
+            
+            // Ajouter une ligne pour les contrôles de groupe
+            const groupControlRow = document.createElement('tr');
+            groupControlRow.className = 'group-controls';
+            let groupControlHTML = '<td>Tous les élèves</td>';
+            
+            // Ajouter un sélecteur pour chaque colonne, avec un index unique
+            selectedCompetences.forEach((comp, index) => {
+                groupControlHTML += `
+                    <td>
+                        <select class="group-select" data-column="${index + 1}">
+                            <option value="">-</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                        </select>
+                    </td>
+                `;
+            });
+            
+            groupControlRow.innerHTML = groupControlHTML;
+            tbody.appendChild(groupControlRow);
+            
+            // Ajouter les écouteurs pour les sélecteurs de groupe
+            groupControlRow.querySelectorAll('.group-select').forEach(select => {
+                select.addEventListener('change', (event) => {
+                    const columnIndex = event.target.dataset.column;
+                    const value = event.target.value;
+                    
+                    // Mettre à jour les sélecteurs pour les élèves uniquement dans cette colonne
+                    document.querySelectorAll(`#evaluation-tbody tr:not(.group-controls)`).forEach(tr => {
+                        // Sélectionner uniquement le select dans la colonne correspondante
+                        const studentSelect = tr.querySelector(`select[data-column="${columnIndex}"]`);
+                        if (studentSelect) {
+                            studentSelect.value = value;
+                            
+                            // Déclencher l'événement change pour mettre à jour les évaluations
+                            const changeEvent = new Event('change');
+                            studentSelect.dispatchEvent(changeEvent);
+                        }
+                    });
+                });
+            });
+            
+            // Ajouter une ligne pour chaque élève
+            students.filter(student => student).forEach(student => {
+                const tr = document.createElement('tr');
+                let trHTML = `<td>${student}</td>`;
+                
+                selectedCompetences.forEach((comp, index) => {
+                    trHTML += `
+                        <td>
+                            <select class="eval-select" data-student="${student}" data-comp="${comp}" data-column="${index + 1}">
+                                <option value="">-</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                                <option value="E">E</option>
+                            </select>
+                        </td>
+                    `;
+                });
+                
+                tr.innerHTML = trHTML;
+                tbody.appendChild(tr);
+            });
+            
+            // Remplir les évaluations existantes
+            document.querySelectorAll('.eval-select').forEach(select => {
+                const student = select.dataset.student;
+                const comp = select.dataset.comp;
+                
+                // Vérifier si une évaluation existe pour cet élève et cette compétence
+                if (evaluations[student] && evaluations[student][comp]) {
+                    select.value = evaluations[student][comp];
+                } else {
+                    select.value = '';
+                }
+                
+                // Ajouter l'écouteur pour sauvegarder les changements
+                select.addEventListener('change', onEvaluationChange);
+            });
+            
+            // Afficher le modal
+            modalElement.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>

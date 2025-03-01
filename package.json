@@ -1,5 +1,12 @@
 {
+  "name": "plan-classe-participatif",
+  "version": "1.0.0",
+  "description": "Application de plan de classe participatif",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
-    "ws": "^8.18.1"
+    "ws": "^8.13.0"
   }
 }
