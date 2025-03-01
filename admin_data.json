@@ -1,0 +1,90 @@
+{
+  "classes": {
+    "classe-2de2": {
+      "nom": "2de2",
+      "eleves": [
+        "BABOURI Mellina",
+        "BELADGHAM Nour",
+        "BENATIG Naëlle",
+        "BRACCO Alexian",
+        "BRUNET Quentin",
+        "CUNHA MOREIRA Rafael",
+        "DELAIRE Zoé",
+        "DODET Léna",
+        "ENGEL Mary",
+        "ERDOGAN Zehranur",
+        "FEROULI ABED REGUIEG Rawan",
+        "FORTES LOPES Solenn",
+        "FRERE Clément",
+        "GAIGA Lilly",
+        "HAKIC Merjem",
+        "HAMRANI Yanis",
+        "JAGER-WOLFF Emma",
+        "JBRYKUNOV Dimitry",
+        "KIREN Romain",
+        "KREB Alexi",
+        "LUCAS Clémence",
+        "MERABTINE Farel",
+        "MESSILI Sabreen",
+        "MIKOLAJCZYK Léa",
+        "NOEL-MARZINOTTO Calvin",
+        "OUADAH Ayoub",
+        "ROGERAT Emeric",
+        "SCHWEITZER-GOULLON Baptiste",
+        "SEGUER Hadj",
+        "SPEDER Siloé",
+        "TRALEWSKI Adrien",
+        "VAUTRIN Louis",
+        "ZIMOCH Tania"
+      ]
+    },
+    "classe-mp-ch5": {
+      "nom": "MP-CH5",
+      "eleves": [
+        "ABDELLAH Ali",
+        "AGUENANA Noam",
+        "ARNOLD Jade",
+        "BOULNOIS Nolann",
+        "CODARIN Agathe",
+        "COMO Janelle",
+        "HARTUNG Alexandre",
+        "HURAUX Noa",
+        "LOUIS Florine",
+        "MAIDA Alicia",
+        "MESSIKH Lina",
+        "PUPILLI Alix",
+        "SUCHECKI Isabelle",
+        "TORKI Amelia",
+        "VALENTE Emilie",
+        "VAN-RYSEGHEM Lilas",
+        "VISCERA Romain",
+        "WAGNER Julie",
+        "YASAR Mehmet"
+      ]
+    },
+    "classe-mp-ch3": {
+      "nom": "MP-CH3",
+      "eleves": [
+        "ANGELETTI Tom",
+        "BUI Lisa",
+        "CAMPAGNA Anna",
+        "DE DEUS Lea",
+        "DI FINI Noah",
+        "FABBRONI Kilian",
+        "HAAS Maëlle",
+        "KRAOUCHE Denia",
+        "LAMKADDEM Marwan",
+        "MELIANI Marwa",
+        "MICHEL Julien",
+        "MICHEL Luc",
+        "MOULIF Kylian",
+        "PERREAU-MILLARD Alexis",
+        "PICCIAU Eva",
+        "RAMPONI Ciara",
+        "ROMEO Antoine",
+        "TEMAR Giulia",
+        "THOMAS Romane"
+      ]
+    }
+  }
+}

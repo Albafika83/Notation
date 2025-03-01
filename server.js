@@ -260,42 +260,100 @@ wss.on('connection', (ws, req) => {
                 
                 case 'UPDATE':
                     console.log('Mise à jour reçue pour', data.classe, data.groupe);
-                    // Mettre à jour les assignations
-                    if (!assignations[data.classe]) {
-                        assignations[data.classe] = {};
-                    }
-                    if (!assignations[data.classe][data.groupe]) {
-                        assignations[data.classe][data.groupe] = {};
-                    }
+                    
+                    // Vérifier que les données d'assignation sont présentes
                     if (data.assignations) {
+                        let updates = {};
+                        let rejectedUpdates = {};
+                        
+                        // Pour chaque assignation reçue, vérifier si l'élève est déjà assigné dans un autre groupe
+                        Object.entries(data.assignations).forEach(([seatId, eleve]) => {
+                            // Si l'élève est vide (suppression d'assignation), on l'accepte toujours
+                            if (!eleve) {
+                                updates[seatId] = eleve;
+                                return;
+                            }
+                            
+                            // Vérifier si l'élève est déjà assigné dans un autre groupe
+                            let dejaAssigne = false;
+                            
+                            if (assignations[data.classe]) {
+                                Object.entries(assignations[data.classe]).forEach(([groupe, groupeAssignations]) => {
+                                    // Ne pas vérifier dans le groupe actuel
+                                    if (groupe !== data.groupe) {
+                                        // Vérifier si l'élève est déjà dans ce groupe
+                                        if (Object.values(groupeAssignations).includes(eleve)) {
+                                            dejaAssigne = true;
+                                            console.log(`L'élève ${eleve} est déjà assigné dans le groupe ${groupe}`);
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            // Si l'élève est déjà assigné ailleurs, rejeter cette mise à jour
+                            if (dejaAssigne) {
+                                rejectedUpdates[seatId] = eleve;
+                            } else {
+                                // Sinon, accepter la mise à jour
+                                updates[seatId] = eleve;
+                            }
+                        });
+                        
+                        // Mettre à jour les assignations avec les mises à jour acceptées
+                        if (!assignations[data.classe]) {
+                            assignations[data.classe] = {};
+                        }
+                        if (!assignations[data.classe][data.groupe]) {
+                            assignations[data.classe][data.groupe] = {};
+                        }
+                        
+                        // Appliquer les mises à jour acceptées
                         assignations[data.classe][data.groupe] = { 
                             ...assignations[data.classe][data.groupe], 
-                            ...data.assignations 
+                            ...updates 
                         };
+                        
+                        // Diffuser la mise à jour aux autres clients
+                        broadcastToOthers(ws, {
+                            type: 'UPDATE',
+                            classe: data.classe,
+                            groupe: data.groupe,
+                            assignations: updates
+                        });
+                        
+                        // Si certaines mises à jour ont été rejetées, en informer le client demandeur
+                        if (Object.keys(rejectedUpdates).length > 0) {
+                            ws.send(JSON.stringify({
+                                type: 'UPDATE_REJECTED',
+                                classe: data.classe,
+                                groupe: data.groupe,
+                                rejectedAssignations: rejectedUpdates,
+                                message: "Certains élèves sont déjà assignés dans d'autres groupes."
+                            }));
+                        }
                     }
                     
-                    // Mettre à jour les évaluations
+                    // Mettre à jour les évaluations comme avant
                     if (data.evaluations) {
                         if (!evaluations[data.classe]) {
                             evaluations[data.classe] = {};
                         }
-                        if (!evaluations[data.classe][data.groupe]) {
+                        if (!evaluations[data.classe][data.groupe]) { 
                             evaluations[data.classe][data.groupe] = {};
                         }
                         evaluations[data.classe][data.groupe] = {
                             ...evaluations[data.classe][data.groupe],
                             ...data.evaluations
                         };
+                        
+                        // Diffuser la mise à jour des évaluations
+                        broadcastToOthers(ws, {
+                            type: 'UPDATE',
+                            classe: data.classe,
+                            groupe: data.groupe,
+                            evaluations: data.evaluations
+                        });
                     }
-                    
-                    // Diffuser la mise à jour aux autres clients
-                    broadcastToOthers(ws, {
-                        type: 'UPDATE',
-                        classe: data.classe,
-                        groupe: data.groupe,
-                        assignations: data.assignations,
-                        evaluations: data.evaluations
-                    });
                     break;
                 
                 case 'IMPORT_STUDENTS':
@@ -567,6 +625,33 @@ wss.on('connection', (ws, req) => {
                     }));
                     break;
                 
+                case 'GET_ALL_ASSIGNMENTS_GLOBAL':
+                    console.log('Demande de toutes les assignations globales pour la classe:', data.classe);
+                    
+                    // Liste pour stocker tous les élèves assignés
+                    const tousElevesAssignes = new Set();
+                    
+                    // Si la classe existe dans les assignations
+                    if (assignations[data.classe]) {
+                        // Pour chaque groupe
+                        Object.entries(assignations[data.classe]).forEach(([groupe, groupeAssignations]) => {
+                            // Pour chaque assignation dans ce groupe
+                            Object.values(groupeAssignations).forEach(eleve => {
+                                if (eleve) {
+                                    tousElevesAssignes.add(eleve);
+                                }
+                            });
+                        });
+                    }
+                    
+                    // Envoyer la liste complète des élèves assignés
+                    ws.send(JSON.stringify({
+                        type: 'ALL_ASSIGNMENTS_GLOBAL',
+                        classe: data.classe,
+                        elevesAssignes: Array.from(tousElevesAssignes)
+                    }));
+                    break;
+                
                 default:
                     console.log('Type de message non reconnu:', data.type);
             }
@@ -655,6 +740,8 @@ function broadcastToOthers(sender, message) {
 function broadcastToAll(message) {
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
+            console.log('Structure reçue du serveur:', message.assignations);
+            console.log('Type de message.assignations:', typeof message.assignations);
             client.send(JSON.stringify(message));
         }
     });

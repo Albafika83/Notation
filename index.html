@@ -202,7 +202,6 @@
         let classeActuelle = '';
         let groupeActuel = '';
         let assignations = {};
-        let elevesDisponibles = [];
         let draggedStudent = null;
         let dragSourceSeat = null;
         
@@ -295,15 +294,20 @@
                             break;
                             
                         case 'ALL_GROUP_ASSIGNMENTS':
-                            // Stocker les assignations de tous les groupes pour cette classe
-                            if (message.classe === classeActuelle) {
-                                console.log('Reçu ALL_GROUP_ASSIGNMENTS pour', message.classe);
-                                // Récupérer tous les élèves assignés dans tous les groupes
-                                const elevesAssignesDansTousLesGroupes = Object.values(message.assignations);
-                                console.log('Élèves assignés dans tous les groupes:', elevesAssignesDansTousLesGroupes);
+                            // On ignore ce message, on ne fait plus de filtrage global
+                            console.log(`Reçu message ALL_GROUP_ASSIGNMENTS pour la classe: ${message.classe}`);
+                            break;
+                            
+                        case 'UPDATE_REJECTED':
+                            if (message.classe === classeActuelle && message.groupe === groupeActuel) {
+                                // Des assignations ont été rejetées
+                                console.log('Assignations rejetées:', message.rejectedAssignations);
                                 
-                                // Mettre à jour les élèves disponibles
-                                mettreAJourElevesDisponibles();
+                                // Afficher un message à l'utilisateur
+                                alert(`Certains élèves ne peuvent pas être assignés car ils sont déjà présents dans un autre groupe.\n\nLe plan de classe a été mis à jour partiellement.`);
+                                
+                                // Mettre à jour l'interface pour refléter l'état actuel
+                                demanderAssignations(); // Récupérer l'état actuel depuis le serveur
                             }
                             break;
                     }
@@ -358,6 +362,14 @@
                 
                 // Sauvegarder la sélection dans le stockage local
                 localStorage.setItem('derniereClasse', classeActuelle);
+                
+                // Demander toutes les assignations pour cette classe
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'GET_ALL_GROUP_ASSIGNMENTS',
+                        classe: classeActuelle
+                    }));
+                }
             } else {
                 choixGroupeElement.disabled = true;
                 choixGroupeElement.value = '';
@@ -388,6 +400,14 @@
                 
                 // Demander les assignations pour la classe et le groupe actuels
                 demanderAssignations();
+                
+                // Demander toutes les assignations pour cette classe
+                if (ws && ws.readyState === WebSocket.OPEN && classeActuelle) {
+                    ws.send(JSON.stringify({
+                        type: 'GET_ALL_GROUP_ASSIGNMENTS',
+                        classe: classeActuelle
+                    }));
+                }
             } else {
                 localStorage.removeItem('dernierGroupe');
                 
@@ -477,118 +497,82 @@
         
         // Fonction pour mettre à jour les assignations
         function mettreAJourAssignations() {
-            // Mettre à jour la liste des élèves disponibles
-            mettreAJourElevesDisponibles();
+            // Version simplifiée qui n'essaie pas de filtrer les élèves
+            // Récupérer la liste des élèves de la classe actuelle
+            let eleves = [];
+            if (adminData && adminData.classes && classeActuelle && adminData.classes[classeActuelle]) {
+                eleves = [...adminData.classes[classeActuelle].eleves];
+            }
             
-            // Mettre à jour chaque siège
+            // Mettre à jour tous les sélecteurs d'élèves
             document.querySelectorAll('.student-select').forEach(select => {
-                const seatId = select.parentElement.id;
-                const occupantElement = select.nextElementSibling;
+                const selectedValue = select.value;
                 
-                // Réinitialiser le sélecteur
-                select.innerHTML = '<option value="">Non assigné</option>';
+                // Vider et recréer la liste
+                select.innerHTML = '<option value="">Sélectionner un élève</option>';
                 
-                // Ajouter les élèves disponibles
-                elevesDisponibles.forEach(eleve => {
+                // Conserver l'élève sélectionné
+                if (selectedValue && selectedValue.trim() !== '') {
                     const option = document.createElement('option');
-                    option.value = eleve;
-                    option.textContent = eleve;
+                    option.value = selectedValue;
+                    option.text = selectedValue;
+                    option.selected = true;
                     select.appendChild(option);
-                });
-                
-                // Ajouter tous les élèves de la classe si la liste est vide
-                if (adminData && adminData.classes && classeActuelle && elevesDisponibles.length === 0) {
-                    const classe = adminData.classes[classeActuelle];
-                    if (classe && classe.eleves) {
-                        classe.eleves.forEach(eleve => {
-                            const option = document.createElement('option');
-                            option.value = eleve;
-                            option.textContent = eleve;
-                            select.appendChild(option);
-                        });
-                    }
                 }
                 
-                // Sélectionner l'élève assigné à ce siège, s'il y en a un
-                const eleveAssigne = assignations[seatId];
-                if (eleveAssigne) {
-                    // Ajouter l'élève assigné s'il n'est pas dans la liste des disponibles
-                    if (!elevesDisponibles.includes(eleveAssigne)) {
-                        const option = document.createElement('option');
-                        option.value = eleveAssigne;
-                        option.textContent = eleveAssigne;
-                        select.appendChild(option);
-                    }
-                    
-                    select.value = eleveAssigne;
-                    occupantElement.textContent = eleveAssigne;
+                // Ajouter tous les élèves sans filtrage
+                eleves.forEach(eleve => {
+                    const option = document.createElement('option');
+                    option.value = eleve;
+                    option.text = eleve;
+                    select.appendChild(option);
+                });
+            });
+            
+            // Mettre à jour l'affichage des occupants (pour le drag and drop)
+            document.querySelectorAll('.seat').forEach(seat => {
+                const seatId = seat.id;
+                const selectedStudent = assignations[seatId] || '';
+                const occupantElement = seat.querySelector('.seat-occupant');
+                
+                if (selectedStudent) {
+                    occupantElement.textContent = selectedStudent;
                     occupantElement.classList.add('draggable');
                 } else {
-                    select.value = '';
                     occupantElement.textContent = '';
                     occupantElement.classList.remove('draggable');
                 }
             });
         }
         
-        // Fonction pour mettre à jour la liste des élèves disponibles
-        function mettreAJourElevesDisponibles() {
-            elevesDisponibles = [];
-            
-            // Récupérer tous les élèves de la classe actuelle
-            if (adminData && adminData.classes && classeActuelle) {
-                const classe = adminData.classes[classeActuelle];
-                if (classe && classe.eleves) {
-                    // Utiliser tous les élèves de la classe
-                    elevesDisponibles = [...classe.eleves];
-                    
-                    // Récupérer tous les élèves déjà assignés
-                    const elevesAssignes = Object.values(assignations);
-                    
-                    // Filtrer les élèves déjà assignés dans le groupe actuel
-                    elevesDisponibles = elevesDisponibles.filter(eleve => !elevesAssignes.includes(eleve));
-                    
-                    console.log('Élèves disponibles après filtrage:', elevesDisponibles);
-                }
-            }
-            
-            // Ne pas appeler mettreAJourAssignations ici pour éviter la boucle infinie
-        }
-        
         // Fonction appelée lorsqu'un élève est assigné à un siège
         function onStudentSelectChange(event) {
             const select = event.target;
             const seatId = select.parentElement.id;
-            const eleveSelectionne = select.value;
+            const selectedStudent = select.value;
             const occupantElement = select.nextElementSibling;
             
-            // Mettre à jour l'affichage de l'occupant
-            occupantElement.textContent = eleveSelectionne;
+            console.log(`Modification de l'assignation pour le siège ${seatId}: ${selectedStudent}`);
             
-            // Mettre à jour les assignations locales
-            if (eleveSelectionne) {
-                assignations[seatId] = eleveSelectionne;
+            // Mettre à jour l'affichage de l'occupant
+            if (selectedStudent) {
+                occupantElement.textContent = selectedStudent;
                 occupantElement.classList.add('draggable');
             } else {
-                delete assignations[seatId];
+                occupantElement.textContent = '';
                 occupantElement.classList.remove('draggable');
             }
             
-            // Envoyer la mise à jour au serveur
-            if (ws && ws.readyState === WebSocket.OPEN && classeActuelle && groupeActuel) {
-                ws.send(JSON.stringify({
-                    type: 'UPDATE',
-                    classe: classeActuelle,
-                    groupe: groupeActuel,
-                    assignations: { [seatId]: eleveSelectionne }
-                }));
-                
-                // Mettre à jour la liste des élèves disponibles localement
-                mettreAJourElevesDisponibles();
-            }
+            // Mettre à jour les assignations locales
+            assignations[seatId] = selectedStudent;
             
-            // Mettre à jour les assignations pour refléter les changements
-            mettreAJourAssignations();
+            // Mettre à jour via WebSocket
+            ws.send(JSON.stringify({
+                type: 'UPDATE',
+                classe: classeActuelle,
+                groupe: groupeActuel,
+                assignations: { [seatId]: selectedStudent }
+            }));
         }
         
         // Fonction pour initialiser le drag and drop
@@ -705,9 +689,6 @@
                     delete assignations[dragSourceSeat];
                 }
                 
-                // Mettre à jour l'affichage
-                mettreAJourAssignations();
-                
                 // Envoyer les mises à jour au serveur
                 if (ws && ws.readyState === WebSocket.OPEN && classeActuelle && groupeActuel) {
                     ws.send(JSON.stringify({
@@ -720,9 +701,19 @@
                         }
                     }));
                     
-                    // Mettre à jour la liste des élèves disponibles localement
-                    mettreAJourElevesDisponibles();
+                    // Demander les assignations pour cette classe après un court délai
+                    setTimeout(() => {
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({
+                                type: 'GET_ALL_GROUP_ASSIGNMENTS',
+                                classe: classeActuelle
+                            }));
+                        }
+                    }, 100);
                 }
+                
+                // Mettre à jour l'affichage
+                mettreAJourAssignations();
             }
         }
     </script>
